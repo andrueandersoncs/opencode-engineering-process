@@ -1,0 +1,28 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "instructions": [
+    "instructions/ENGINEERING_PROCESS.md",
+    "instructions/phases/*.md",
+    "instructions/checklists/*.md"
+  ],
+  "agent": {
+    "build": {
+      "mode": "primary",
+      "description": "Default agent with full access - delegates to specialized agents during engineering workflow"
+    }
+  },
+  "command": {
+    "story": {
+      "description": "Start a structured engineering workflow for a user story, issue, or task",
+      "template": "@.opencode/command/story.md"
+    },
+    "phase": {
+      "description": "Jump to or review a specific phase of the engineering process",
+      "template": "@.opencode/command/phase.md"
+    },
+    "checkpoint": {
+      "description": "Validate current phase completion before proceeding",
+      "template": "@.opencode/command/checkpoint.md"
+    }
+  }
+}
