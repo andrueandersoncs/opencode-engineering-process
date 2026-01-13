@@ -3,6 +3,8 @@
 ## Purpose
 Verify that the implementation is correct, secure, and meets all requirements. Catch issues before deployment.
 
+**CRITICAL: Validation primarily means verifying that all tests pass and provide adequate coverage.**
+
 ## Agent
 **Delegate to: `@reviewer`**
 
@@ -17,17 +19,32 @@ Examine all changes:
 - Security considerations
 - Code quality
 
-### 2. Test Verification
-Ensure adequate coverage:
-- Run all tests
-- Check for missing test cases
-- Verify edge case handling
+### 2. Test Verification (CRITICAL)
+Run and assess ALL tests:
+```bash
+# Run E2E tests (Playwright) - MUST ALL PASS
+npx playwright test
+npx playwright test --reporter=html  # For detailed report
 
-### 3. Acceptance Criteria
-Validate each criterion:
-- Walk through user scenarios
-- Verify expected behavior
-- Document verification
+# Run unit tests (Vitest)
+npx vitest run
+
+# Check coverage
+npx vitest run --coverage
+```
+
+**Test Coverage Requirements:**
+- All E2E tests from the task breakdown must pass
+- Unit test coverage should be reasonable for new code
+- No skipped or pending tests without documented reasons
+
+### 3. Acceptance Criteria (Verified by Tests)
+For each criterion from the user story:
+- **Verify there is at least one E2E test covering it**
+- Run the specific test to confirm it passes
+- Document which test verifies which criterion
+
+**Acceptance criteria are verified by passing tests, not manual inspection.**
 
 ### 4. Security Review
 Check for vulnerabilities:
@@ -88,10 +105,11 @@ Expected output:
 - [ ] No blocking operations in hot paths
 - [ ] Pagination for large data sets
 
-### Testing
-- [ ] Unit tests for business logic
-- [ ] Integration tests for API endpoints
-- [ ] Edge cases covered
+### Testing (CRITICAL)
+- [ ] **All E2E tests pass**
+- [ ] **E2E tests were written BEFORE implementation**
+- [ ] Unit tests for complex business logic
+- [ ] Edge cases covered by tests
 - [ ] All tests passing
 
 ### Documentation
@@ -137,10 +155,11 @@ Expected output:
 
 ## Completion Criteria
 
+- [ ] **CRITICAL: All E2E tests pass**
+- [ ] **CRITICAL: Each acceptance criterion has a passing test**
 - [ ] Code review completed
 - [ ] All critical/major issues addressed
-- [ ] All tests passing
-- [ ] Acceptance criteria verified
+- [ ] All unit tests passing
 - [ ] Security assessment passed
 - [ ] Review approved
 
@@ -150,6 +169,8 @@ Expected output:
 2. **Nitpicking** - Blocking on style when linters should handle it
 3. **Missing Security** - Not checking for common vulnerabilities
 4. **Ignoring Edge Cases** - Only testing happy paths
+5. **Manual-Only Validation** - Relying on manual testing instead of automated tests
+6. **Ignoring Test Coverage** - Not verifying that tests actually cover the acceptance criteria
 
 ## Next Phase
 Proceed to Phase 8: Deploy when criteria are met.

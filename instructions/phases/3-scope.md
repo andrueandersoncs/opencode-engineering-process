@@ -13,6 +13,7 @@ Based on requirements and research:
 - What functionality must be delivered?
 - What behavior changes are required?
 - What integration points need work?
+- **What E2E tests MUST be written (required for every story)?**
 
 ### 2. Define Out-of-Scope Items
 Explicitly exclude:
@@ -21,19 +22,26 @@ Explicitly exclude:
 - Future enhancements
 - Technical debt that isn't blocking
 
-### 3. Identify Minimal Viable Implementation
+### 3. Define Test Scope (CRITICAL)
+Specify which tests are required vs. optional:
+- **Required E2E tests** (at least one per story, ideally per acceptance criterion)
+- Required unit tests (for complex business logic)
+- Optional integration tests
+- Test coverage expectations
+
+### 4. Identify Minimal Viable Implementation
 Find the smallest working solution:
 - What's the critical path?
 - What can be simplified without losing value?
 - What can be deferred to iteration?
 
-### 4. Assess Dependencies
+### 5. Assess Dependencies
 Document what blocks or is blocked by this work:
 - Prerequisites that must exist
 - Work that depends on this
 - External dependencies (APIs, services, teams)
 
-### 5. Risk Assessment
+### 6. Risk Assessment
 Identify potential issues:
 - Technical risks
 - Integration risks
@@ -81,6 +89,13 @@ Key simplifications:
 |------|------------|--------|------------|
 | [Risk 1] | Low/Med/High | Low/Med/High | [Strategy] |
 
+### Test Scope (REQUIRED)
+| Test Type | Required | File/Location | Status |
+|-----------|----------|---------------|--------|
+| E2E: User can X | Yes | tests/e2e/feature.spec.ts | Pending |
+| E2E: Error handling | Yes | tests/e2e/feature.spec.ts | Pending |
+| Unit: Logic Y | Yes | src/__tests__/logic.test.ts | Pending |
+
 ### Acceptance Criteria
 1. Given [context], when [action], then [result]
 2. Given [context], when [action], then [result]
@@ -94,6 +109,8 @@ Key simplifications:
 - [ ] Dependencies mapped and understood
 - [ ] Risks assessed with mitigations
 - [ ] Acceptance criteria defined
+- [ ] **CRITICAL: Required E2E tests are specified**
+- [ ] **CRITICAL: Test coverage expectations are defined**
 
 ## Common Pitfalls
 

@@ -24,8 +24,16 @@ Use this checklist to ensure thorough research before moving to design.
 ## Pattern Recognition
 - [ ] Documented coding conventions used
 - [ ] Found error handling patterns
-- [ ] Identified testing approaches
 - [ ] Noted naming conventions
+
+## Test Infrastructure Discovery (CRITICAL)
+- [ ] **E2E test framework identified (e.g., Playwright)**
+- [ ] **Unit test framework identified (e.g., Vitest)**
+- [ ] Test file naming/location understood
+- [ ] Fixture/mock patterns documented
+- [ ] Coverage expectations known
+- [ ] **Commands to run tests documented**
+- [ ] **Existing test examples reviewed**
 
 ## Dependency Mapping
 - [ ] Listed all systems this feature touches
@@ -44,3 +52,4 @@ Use this checklist to ensure thorough research before moving to design.
 - [ ] Assumptions are explicitly verified, not assumed correct
 - [ ] Findings are specific with concrete references
 - [ ] No blocking questions remain
+- [ ] **Test infrastructure fully documented**

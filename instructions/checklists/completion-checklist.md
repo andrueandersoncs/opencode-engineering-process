@@ -11,10 +11,12 @@ Use this checklist before marking the workflow complete.
 - [ ] Error handling is appropriate
 - [ ] Logging added where useful
 
-## Testing
-- [ ] Unit tests for business logic
-- [ ] Integration tests for API endpoints
-- [ ] Edge cases covered
+## Testing (CRITICAL)
+- [ ] **E2E tests were written BEFORE implementation**
+- [ ] **E2E tests verify each acceptance criterion**
+- [ ] **All E2E tests pass**
+- [ ] Unit tests for complex business logic
+- [ ] Edge cases covered by tests
 - [ ] All tests passing
 - [ ] Tests are meaningful, not just coverage padding
 
@@ -55,6 +57,7 @@ Use this checklist before marking the workflow complete.
 - [ ] Minor issues addressed or documented
 
 ## Deployment
+- [ ] **E2E tests pass against production/staging**
 - [ ] Deployment successful
 - [ ] Feature verified in production
 - [ ] No new errors observed

@@ -29,11 +29,19 @@ Use this checklist to ensure design is complete before implementation.
 - [ ] Rationale provided for chosen option
 - [ ] Rejected alternatives explained
 
+## Test Architecture (CRITICAL)
+- [ ] **E2E test scenarios defined for each acceptance criterion**
+- [ ] **E2E test file locations specified**
+- [ ] **Test dependencies (fixtures, mocks) identified**
+- [ ] **Test isolation strategy defined**
+- [ ] **Existing test patterns referenced**
+- [ ] **Test data setup documented**
+
 ## Implementation Guidance
 - [ ] Suggested approach documented
 - [ ] Patterns to follow identified
 - [ ] Gotchas and pitfalls noted
-- [ ] Testing strategy outlined
+- [ ] **E2E tests to write FIRST are specified**
 
 ## Risk Assessment
 - [ ] Technical risks identified
@@ -52,3 +60,5 @@ Use this checklist to ensure design is complete before implementation.
 - [ ] Design addresses all in-scope requirements
 - [ ] Constraints from research are incorporated
 - [ ] Open questions from research are addressed
+- [ ] **Test architecture is complete**
+- [ ] **E2E test scenarios cover all acceptance criteria**

@@ -30,14 +30,23 @@ Investigate external factors:
 - Performance characteristics
 - Rate limits, pagination, caching
 
-### 4. Pattern Recognition
+### 4. Test Infrastructure Discovery (CRITICAL)
+Find and document existing test setup:
+- Test framework and configuration (Playwright, Vitest, etc.)
+- Test directory structure and naming conventions
+- Existing fixtures, helpers, and mocks
+- How to run tests locally
+- CI/CD test configuration
+- Code coverage requirements and thresholds
+
+### 5. Pattern Recognition
 Identify conventions to follow:
 - Code style and structure
 - Error handling patterns
-- Testing approaches
+- **Testing patterns and approaches**
 - Naming conventions
 
-### 5. Dependency Mapping
+### 6. Dependency Mapping
 Understand what this feature touches:
 - Which files will need changes?
 - What systems integrate with this area?
@@ -91,6 +100,30 @@ Create `research-notes.md` in the story directory (`docs/stories/<story-slug>/re
 - API responses: [pattern with example location]
 - Testing: [pattern with example location]
 
+## Test Infrastructure (REQUIRED)
+### Framework & Configuration
+- E2E Framework: [Playwright/Cypress/etc.]
+- Unit Framework: [Vitest/Jest/etc.]
+- Config files: [paths to config files]
+
+### Running Tests
+```bash
+# E2E tests
+[command to run e2e tests]
+
+# Unit tests
+[command to run unit tests]
+
+# Coverage
+[command for coverage]
+```
+
+### Existing Test Patterns
+- Test file location: [e.g., `tests/e2e/*.spec.ts`]
+- Fixture examples: [paths to example fixtures]
+- Mock patterns: [paths to example mocks]
+- Helper utilities: [paths to test helpers]
+
 ## Dependencies & Constraints
 - [Dependency 1]: [Details]
 - [Constraint 1]: [Details]
@@ -116,6 +149,9 @@ Create `research-notes.md` in the story directory (`docs/stories/<story-slug>/re
 - [ ] Dependencies and constraints are understood
 - [ ] Research notes are saved as an artifact
 - [ ] No blocking questions remain
+- [ ] **CRITICAL: Test framework and configuration documented**
+- [ ] **CRITICAL: Test commands identified and verified**
+- [ ] **CRITICAL: Existing test patterns documented with examples**
 
 ## Common Pitfalls
 

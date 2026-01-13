@@ -25,13 +25,27 @@ Surface what's not stated but implied:
 - What constraints exist from the context?
 - What quality attributes matter (performance, security, etc.)?
 
-### 4. Find Gaps and Ambiguities
+### 4. Extract Testable Acceptance Criteria (CRITICAL)
+For each requirement, define how it will be verified:
+- Convert requirements to "Given/When/Then" format
+- Ask: "How will we test that this works?"
+- Identify what E2E tests are needed
+- Document test scenarios alongside requirements
+
+Example:
+```
+Requirement: Users can log in with email/password
+Test Scenario: Given a registered user, when they enter valid credentials, then they see the dashboard
+E2E Test: tests/e2e/user-login.spec.ts
+```
+
+### 5. Find Gaps and Ambiguities
 List questions that need answers:
 - What information is missing?
 - What terms are ambiguous?
 - What edge cases are unspecified?
 
-### 5. Clarify with User
+### 6. Clarify with User
 If there are blocking questions:
 - Present the questions clearly
 - Provide options when possible
@@ -62,6 +76,12 @@ Document in the conversation or a notes file:
 ### Assumptions
 - Assumption 1 (will verify in research)
 - Assumption 2 (will verify in research)
+
+### Test Scenarios (REQUIRED)
+| Requirement | Test Scenario | Test Type |
+|-------------|---------------|-----------|
+| Requirement 1 | Given X, when Y, then Z | E2E |
+| Requirement 2 | Given A, when B, then C | E2E |
 ```
 
 ## Completion Criteria
@@ -71,6 +91,8 @@ Document in the conversation or a notes file:
 - [ ] Implicit requirements are surfaced
 - [ ] Blocking questions are answered (or escalated to user)
 - [ ] Assumptions are documented for verification
+- [ ] **CRITICAL: Each requirement has a testable acceptance criterion**
+- [ ] **CRITICAL: Test scenarios are documented in Given/When/Then format**
 
 ## Common Pitfalls
 

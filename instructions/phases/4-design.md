@@ -37,12 +37,20 @@ Document important choices:
 - Decision rationale
 - Implications
 
-### 5. Implementation Guidance
+### 5. Test Architecture Design (CRITICAL)
+Plan the testing strategy alongside feature design:
+- Where E2E tests will live (file names, directory structure)
+- What fixtures and test data are needed
+- What needs to be mocked vs. tested end-to-end
+- Test isolation strategy (how to avoid test interference)
+- Authentication/setup helpers needed
+
+### 6. Implementation Guidance
 Prepare for handoff:
 - Suggested approach
 - Patterns to follow
 - Gotchas to avoid
-- Testing strategy
+- **E2E tests to write FIRST**
 
 ## Delegation to Architect Agent
 
@@ -112,6 +120,20 @@ Errors: 400 (validation), 401 (auth), 500 (server)
 [New tables/collections]
 [Relationships]
 
+### Test Architecture (REQUIRED)
+
+#### E2E Tests
+| Test Scenario | File Location | Dependencies |
+|---------------|---------------|--------------|
+| User can X | tests/e2e/feature.spec.ts | Auth fixture |
+| Error handling | tests/e2e/feature.spec.ts | None |
+
+#### Test Infrastructure Needs
+- Fixtures required: [list]
+- Mocks required: [list]
+- Test data setup: [describe]
+- Cleanup strategy: [describe]
+
 ### Key Decisions
 
 #### Decision 1: [Topic]
@@ -152,7 +174,9 @@ Errors: 400 (validation), 401 (auth), 500 (server)
 - [ ] API contracts defined (if applicable)
 - [ ] Data model specified (if applicable)
 - [ ] Implementation guidance provided
-- [ ] Testing strategy outlined
+- [ ] **CRITICAL: Test architecture is defined**
+- [ ] **CRITICAL: E2E test locations and scenarios are planned**
+- [ ] **CRITICAL: Test fixtures and mocks are identified**
 
 ## Common Pitfalls
 

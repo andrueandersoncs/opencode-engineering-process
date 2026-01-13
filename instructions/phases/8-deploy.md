@@ -10,10 +10,14 @@ Release the implementation to production safely. Monitor for issues and be ready
 
 ### 1. Pre-Deployment Checks
 Verify readiness:
+- **CRITICAL: All E2E tests pass in CI**
+- **CRITICAL: All unit tests pass in CI**
 - All validation criteria met
 - No blocking issues
 - Deployment plan clear
 - Rollback plan exists
+
+**DO NOT DEPLOY if any tests are failing.**
 
 ### 2. Deployment Execution
 Execute the release:
@@ -23,10 +27,16 @@ Execute the release:
 
 ### 3. Post-Deployment Verification
 Confirm production state:
+- **Run E2E tests against production/staging**
 - Feature works as expected
 - No errors in logs
 - Performance acceptable
 - Monitoring in place
+
+```bash
+# Run E2E tests against deployed environment
+PLAYWRIGHT_BASE_URL=https://staging.example.com npx playwright test
+```
 
 ### 4. Stakeholder Communication
 Close the loop:
@@ -126,6 +136,8 @@ Always have a plan:
 
 ## Completion Criteria
 
+- [ ] **CRITICAL: All tests passed before deployment**
+- [ ] **CRITICAL: E2E tests pass in production environment**
 - [ ] Deployment successful
 - [ ] Feature verified in production
 - [ ] No new errors observed
