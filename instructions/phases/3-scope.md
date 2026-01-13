@@ -48,6 +48,47 @@ Identify potential issues:
 - Timeline risks
 - Knowledge gaps
 
+### 7. Impossibility Proofs (When Applicable)
+When something genuinely can't be done, don't just say "that's impossible." Show *why*:
+
+```markdown
+## Impossibility Analysis
+
+### Requested: "Real-time sync without WebSockets"
+
+### Constraint Chain:
+1. Real-time updates require push from server → client
+2. HTTP is request-response only (client must initiate)
+3. Without WebSockets/SSE, only polling is available
+4. Polling has inherent latency (not truly real-time)
+
+### Conclusion: Request as stated is impossible
+
+### Proof:
+- "Real-time" typically means <100ms latency
+- Best-case polling latency = poll interval + network RTT
+- Minimum practical poll interval ~1000ms
+- Therefore: polling ≥ 1000ms > 100ms requirement
+- Conflict: Cannot achieve <100ms with ≥1000ms mechanism
+
+### Alternatives Offered:
+1. **Near-real-time with polling** (1-5s latency)
+   - Works within constraints
+   - Trade-off: Not truly real-time
+
+2. **Add WebSocket support** (lifts the constraint)
+   - Achieves true real-time
+   - Trade-off: Requires infrastructure change
+
+3. **Server-Sent Events** (one-way real-time)
+   - Real-time server→client only
+   - Trade-off: No client→server push
+
+### Recommended: [Option with rationale]
+```
+
+**Making impossibility legible helps the user reformulate their request.**
+
 ## Output
 
 Document scope decisions:
@@ -109,6 +150,7 @@ Key simplifications:
 - [ ] Dependencies mapped and understood
 - [ ] Risks assessed with mitigations
 - [ ] Acceptance criteria defined
+- [ ] **CRITICAL: Any impossibilities documented with proofs and alternatives**
 - [ ] **CRITICAL: Required E2E tests are specified**
 - [ ] **CRITICAL: Test coverage expectations are defined**
 

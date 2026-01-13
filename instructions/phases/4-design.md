@@ -45,7 +45,45 @@ Plan the testing strategy alongside feature design:
 - Test isolation strategy (how to avoid test interference)
 - Authentication/setup helpers needed
 
-### 6. Implementation Guidance
+### 6. Design Simulation (CRITICAL)
+Before finalizing design, mentally "run" through the implementation:
+
+**Walk through each user story step-by-step:**
+
+```markdown
+## Design Simulation: User Login Flow
+
+### Step 1: User navigates to /login
+- Route exists? ✓ (router.ts:45)
+- Component loads? ✓ (LoginPage.tsx)
+
+### Step 2: User enters credentials
+- Form component ready? ✓ (LoginForm.tsx)
+- Validation logic clear? ✓ (zod schema)
+
+### Step 3: System validates credentials
+- Auth service defined? ✓ (auth.service.ts)
+- API endpoint specified? ✓ (POST /api/auth/login)
+
+### Step 4: System creates session
+- ⚠️ **STUCK**: Where is session stored?
+  - Redis? (not configured in design)
+  - JWT? (not specified)
+  - Cookie? (security implications?)
+
+**ACTION REQUIRED**: Design must specify session storage before proceeding.
+
+### Step 5: User redirected to dashboard
+- Redirect mechanism? ✓ (Next.js router)
+- Dashboard loads? ✓ (assumes auth context available)
+```
+
+**Check for simulation failures:**
+- If the simulation gets stuck, you've found an underspecified area
+- Document gaps in design.md under "## Design Gaps Identified"
+- Resolve all gaps before proceeding to decompose phase
+
+### 7. Implementation Guidance
 Prepare for handoff:
 - Suggested approach
 - Patterns to follow
@@ -174,6 +212,8 @@ Errors: 400 (validation), 401 (auth), 500 (server)
 - [ ] API contracts defined (if applicable)
 - [ ] Data model specified (if applicable)
 - [ ] Implementation guidance provided
+- [ ] **CRITICAL: Design simulation completed** - all user flows walked through
+- [ ] **CRITICAL: No simulation stuck points** - all gaps identified and resolved
 - [ ] **CRITICAL: Test architecture is defined**
 - [ ] **CRITICAL: E2E test locations and scenarios are planned**
 - [ ] **CRITICAL: Test fixtures and mocks are identified**

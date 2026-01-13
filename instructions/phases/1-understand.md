@@ -45,9 +45,31 @@ List questions that need answers:
 - What terms are ambiguous?
 - What edge cases are unspecified?
 
-### 6. Clarify with User
+### 6. Example-Driven Disambiguation (CRITICAL)
+Instead of asking abstract questions, use concrete scenarios to clarify:
+
+**Create scenarios that expose undefined behavior:**
+
+```markdown
+### Scenario: Normal Login
+- User clicks "Login"
+- Enters email: alice@example.com
+- Enters password: ****
+- Result: Redirected to dashboard ✓
+
+### Scenario: Failed Login (Edge Case)
+- User clicks "Login"
+- Enters wrong password 3 times
+- Result: ??? (Account lockout? CAPTCHA? Just fail again?)
+```
+
+**Present scenarios to user** - they react to concrete examples more easily than abstract questions.
+
+Use the template at `instructions/templates/scenarios.md` and save to story directory as `scenarios.md`.
+
+### 7. Clarify with User
 If there are blocking questions:
-- Present the questions clearly
+- Present the questions clearly using scenarios where possible
 - Provide options when possible
 - Get explicit answers before proceeding
 
@@ -93,6 +115,8 @@ Document in the conversation or a notes file:
 - [ ] Assumptions are documented for verification
 - [ ] **CRITICAL: Each requirement has a testable acceptance criterion**
 - [ ] **CRITICAL: Test scenarios are documented in Given/When/Then format**
+- [ ] **CRITICAL: Edge cases explored via concrete scenarios** - `scenarios.md` created if needed
+- [ ] **CRITICAL: No scenarios marked with `???` or `UNDEFINED`** - all clarified
 
 ## Common Pitfalls
 

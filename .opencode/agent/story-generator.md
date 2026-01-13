@@ -82,12 +82,66 @@ Required sections:
 6. **Technical Notes** (if applicable)
 7. **Assumptions Summary** (for quick review)
 
-### Step 5: Create Verification Summary
+### Step 5: Counterfactual Probing
+
+Generate 2-3 near-miss variants of the request to reveal hidden constraints:
+
+```markdown
+## Counterfactual Probes
+
+### Probe 1: Alternative Approach
+**Original**: "Add user authentication"
+**Variant**: "Would SSO integration satisfy this need, or specifically password-based auth?"
+**Assumed Answer**: Password-based (based on existing auth patterns in codebase)
+**Constraint Revealed**: Authentication method preference
+
+### Probe 2: Quantitative Boundary
+**Original**: "Make it fast"
+**Variant**: "Would 500ms response time be acceptable? What about 2s?"
+**Assumed Answer**: Sub-500ms acceptable based on existing API patterns
+**Constraint Revealed**: Performance threshold
+
+### Probe 3: Scope Boundary
+**Original**: "Users can edit their posts"
+**Variant**: "Should users also be able to delete posts, or just edit?"
+**Assumed Answer**: Edit only (delete not mentioned)
+**Constraint Revealed**: Scope boundary
+```
+
+Document these in `assumptions.md` under "## Counterfactual Probes".
+
+### Step 6: Deliberate Misinterpretation Check ("Stupid User" Test)
+
+Generate plausible-but-wrong interpretations to test if requirements are specific enough:
+
+```markdown
+## Deliberate Misinterpretations
+
+**Request**: "Make the dashboard faster"
+
+### Possible Misinterpretations:
+1. **Faster initial load?** (bundle optimization, code splitting)
+2. **Faster data refresh?** (API optimization, caching)
+3. **Faster perceived speed?** (skeleton screens, optimistic updates)
+4. **Faster for slow connections?** (lazy loading, progressive enhancement)
+
+### Analysis:
+- Does the request rule out any of these? **No**
+- Which interpretation was chosen? **#2 - API optimization**
+- Rationale: Most recent user complaints were about data staleness
+- Mark as: **MEDIUM CONFIDENCE** - user may have meant something else
+```
+
+If multiple interpretations survive, note in `assumptions.md` that clarification may be needed.
+
+### Step 7: Create Verification Summary
 
 Prepare a concise summary for user verification:
 - 3-5 key assumptions that most need validation
 - Generated acceptance criteria overview
 - Questions that couldn't be reasonably assumed
+- Counterfactual probes that revealed important constraints
+- Misinterpretations that couldn't be ruled out
 
 ## Output Format
 
@@ -151,7 +205,40 @@ Questions that could not be reasonably assumed:
 
 ### Secondary Output: `assumptions.md`
 
-Detailed documentation of all assumptions with full rationale.
+Detailed documentation of all assumptions with full rationale, including:
+
+```markdown
+# Assumptions: [Story Title]
+
+## Documented Assumptions
+
+### Assumption 1: [Title]
+**Gap**: [What information was missing]
+**Assumption**: [What we're assuming]
+**Rationale**: [Why this is reasonable]
+**Risk if Wrong**: [Impact]
+**Verification**: [How to confirm/deny]
+
+## Counterfactual Probes
+
+| Probe | Variant Tested | Assumed Answer | Constraint Revealed |
+|-------|---------------|----------------|---------------------|
+| Alternative approach | Would X also work? | No, specifically Y | Method preference |
+| Quantitative boundary | Would Nms be OK? | Yes/No | Performance threshold |
+
+## Deliberate Misinterpretations
+
+| Request Phrase | Possible Meanings | Chosen | Confidence | Rationale |
+|----------------|-------------------|--------|------------|-----------|
+| "faster" | load/refresh/perceived | refresh | Medium | Recent complaints |
+| "secure" | auth/encryption/audit | auth | High | Context mentions login |
+
+## Preference Consistency
+
+Checked against `.preferences.json`:
+- [ ] No conflicts with previously rejected patterns
+- [ ] Aligns with previously preferred patterns
+```
 
 ### Secondary Output: `research-context.md`
 

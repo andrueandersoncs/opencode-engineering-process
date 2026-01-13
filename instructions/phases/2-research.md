@@ -95,6 +95,22 @@ Create `research-notes.md` in the story directory (`docs/stories/<story-slug>/re
 - [x] Assumption 1 - Confirmed at `file:line`
 - [ ] Assumption 2 - REFUTED: Actually [finding]
 
+## Ontology Check (REQUIRED)
+Parse request entities/roles/actions and verify against codebase:
+
+| Entity/Role | Expected | Actual in Codebase | Gap? |
+|-------------|----------|-------------------|------|
+| [Role from request] | [What we expect] | [What actually exists with file:line] | [Mismatch/OK] |
+| [Entity from request] | [Expected capability] | [Actual capability] | [Constraint/OK] |
+
+## Detected Contradictions (REQUIRED)
+Encode requirements and codebase constraints as logical statements:
+
+| Requirement A | Requirement B / Constraint | Tension | Status |
+|---------------|---------------------------|---------|--------|
+| [Requirement 1] | [Conflicting requirement or codebase constraint] | [CONFLICT/CLARIFICATION NEEDED] | [UNRESOLVED/Resolved] |
+| None detected | - | - | Requirements are consistent |
+
 ## Patterns to Follow
 - Error handling: [pattern with example location]
 - API responses: [pattern with example location]
@@ -149,6 +165,8 @@ Create `research-notes.md` in the story directory (`docs/stories/<story-slug>/re
 - [ ] Dependencies and constraints are understood
 - [ ] Research notes are saved as an artifact
 - [ ] No blocking questions remain
+- [ ] **CRITICAL: Ontology check completed** - all entities/roles/actions verified against codebase
+- [ ] **CRITICAL: Contradiction detection completed** - no UNRESOLVED conflicts remain
 - [ ] **CRITICAL: Test framework and configuration documented**
 - [ ] **CRITICAL: Test commands identified and verified**
 - [ ] **CRITICAL: Existing test patterns documented with examples**

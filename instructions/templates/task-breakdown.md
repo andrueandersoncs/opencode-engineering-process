@@ -103,6 +103,51 @@ Phase 1: 1.1 ──┬──> Phase 2: 2.1 ──┬──> 2.3 ──┬──>
                                     Phase 5: 5.1, 5.2
 ```
 
+## Temporal Logic Constraints (REQUIRED)
+
+Document ordering, concurrency, and timing constraints:
+
+### Sequence Constraints (A must happen before B)
+
+| Constraint | Type | Rationale |
+|------------|------|-----------|
+| Auth middleware MUST be deployed before protected routes | Deploy order | Routes depend on auth |
+| Database migration MUST complete before API deployment | Deploy order | API needs schema |
+| [Constraint] | [Type] | [Why] |
+
+### Mutual Exclusion (A and B cannot run simultaneously)
+
+| Resource/Operation A | Resource/Operation B | Conflict Type |
+|---------------------|---------------------|---------------|
+| Session creation | Token refresh | Race condition |
+| Write to user table | Concurrent user update | Data integrity |
+| [Operation A] | [Operation B] | [Conflict type] |
+
+### Liveness Requirements (Must eventually happen)
+
+| Requirement | Trigger | Timeout/Guarantee |
+|-------------|---------|-------------------|
+| User MUST eventually see confirmation | After purchase | 30 seconds |
+| Webhook MUST eventually fire | After state change | 5 retries |
+| [Requirement] | [Trigger] | [Guarantee] |
+
+### Atomicity Requirements (All-or-nothing)
+
+| Operation Group | Rollback Strategy | Notes |
+|-----------------|-------------------|-------|
+| Payment + Order creation | Refund payment if order fails | Saga pattern |
+| If payment fails, cart MUST NOT be cleared | No action needed | Preserve state |
+| [Operation] | [Rollback] | [Notes] |
+
+### Deadlock Analysis
+
+- [ ] Verified: No circular dependencies in task graph
+- [ ] Verified: No resource locks that can block each other
+- [ ] Verified: No API calls that wait on each other
+
+Potential deadlocks identified:
+1. [None / Description of any found]
+
 ## Notes for Implementer
 
 ### Key Considerations

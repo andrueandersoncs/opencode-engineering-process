@@ -68,14 +68,68 @@ Structure your findings as:
 - Database: PostgreSQL with Prisma ORM
 - Rate limiting: 100 req/min per user
 
-### 5. Open Questions
+### 5. Ontology Check (REQUIRED)
+Parse the request into typed operations and verify against codebase:
+
+| Entity/Role | Expected | Actual in Codebase | Gap? |
+|-------------|----------|-------------------|------|
+| User role: "Admin" | Exists | `administrator` (auth/roles.ts:12) | Naming mismatch |
+| Entity: "Comment" | Has delete | Soft delete only (models/Comment.ts:45) | Constraint |
+| Action: "archive" | Available | Not implemented | Missing feature |
+
+### 6. Detected Contradictions
+Encode requirements and constraints as logical statements, then check for conflicts:
+
+| Requirement A | Requirement B | Tension | Resolution |
+|---------------|---------------|---------|------------|
+| "Must work offline" | Uses `fetchAPI()` which requires network | CONFLICT | Need offline storage strategy |
+| "Users can edit posts" | "Posts immutable after 24h" | CLARIFICATION NEEDED | Which takes priority? |
+| None detected | - | - | Requirements are consistent |
+
+### 7. Open Questions
 - [ ] How are sessions invalidated on logout?
 - [ ] Is there caching between API and database?
 
-### 6. Recommendations for Implementation
+### 8. Recommendations for Implementation
 - Follow existing error handling pattern in src/lib/errors.ts
 - Use Prisma transactions for multi-table updates
 - Reference src/api/products.ts as a similar implementation
+```
+
+## Adversarial Verification Techniques
+
+### Contradiction Detection
+Before concluding research, actively check for contradictions:
+
+1. **Encode constraints as logical statements:**
+   - User requirement: "Feature X must work offline"
+   - Codebase reality: "All data fetching uses fetchAPI()"
+   - Existing constraint: "fetchAPI requires network"
+
+2. **Check for unsatisfiable combinations** - if A requires B, but B is incompatible with C, and C is required, flag the contradiction
+
+3. **Surface in research-notes.md** under "## Detected Contradictions"
+
+### Ontology Type-Checking
+Parse requests into typed operations and verify against the codebase:
+
+1. **Identify entities** - roles, actions, objects mentioned in requirements
+2. **Verify each exists** - check naming, capabilities, constraints
+3. **Flag mismatches** - wrong names, missing features, unexpected constraints
+4. **Document in research-notes.md** under "## Ontology Check"
+
+Example:
+```
+Request: "Let admins delete any comment"
+Parsed:
+  - Role: Admin → Does `Admin` exist? Check: auth/roles.ts
+  - Action: delete → Is `delete` valid for Comment? Check: models/Comment.ts
+  - Entity: Comment → What constraints exist? Check: relations, cascade rules
+
+Findings:
+- "Admin" is called "administrator" in code
+- Comments use soft-delete, not hard delete
+- Comments on archived posts cannot be deleted
 ```
 
 ## Research Strategies

@@ -4,12 +4,13 @@
 # Validates phase transitions and enforces workflow constraints
 #
 # Usage:
-#   phase-gate.sh [action] [story-slug]
+#   phase-gate.sh [action] [story-slug] [target-phase]
 #
 # Actions:
-#   check      - Display current phase status
-#   validate   - Validate current phase completion
-#   list       - List all stories
+#   check         - Display current phase status
+#   validate      - Validate current phase completion
+#   list          - List all stories
+#   preconditions - Check preconditions for a phase transition
 #
 # If story-slug is not provided, uses the most recently modified story.
 #
@@ -84,7 +85,89 @@ STORY=$(jq -r '.story // "unknown"' "$WORKFLOW_STATE" 2>/dev/null || echo "unkno
 SLUG=$(jq -r '.slug // "unknown"' "$WORKFLOW_STATE" 2>/dev/null || basename "$STORY_DIR")
 STARTED_AT=$(jq -r '.startedAt // "unknown"' "$WORKFLOW_STATE" 2>/dev/null || echo "unknown")
 
+# Helper function to check preconditions
+check_precondition() {
+    local description="$1"
+    local test_cmd="$2"
+    if eval "$test_cmd" 2>/dev/null; then
+        echo -e "  ${GREEN}✓${NC} $description" >&2
+        return 0
+    else
+        echo -e "  ${RED}✗${NC} $description" >&2
+        return 1
+    fi
+}
+
+# Helper function to check for unresolved contradictions
+check_no_unresolved_contradictions() {
+    local file="$1"
+    if [ -f "$file" ]; then
+        if grep -qi "UNRESOLVED" "$file" 2>/dev/null; then
+            return 1
+        fi
+    fi
+    return 0
+}
+
 case "$ACTION" in
+    "preconditions")
+        # Check preconditions for a target phase
+        TARGET_PHASE="${3:-$CURRENT_PHASE}"
+        echo -e "${BLUE}Checking preconditions for phase: ${YELLOW}$TARGET_PHASE${NC}"
+        echo ""
+        PRECONDITIONS_MET=true
+
+        case "$TARGET_PHASE" in
+            "research")
+                echo "Research phase preconditions:"
+                check_precondition "Requirements documented in understand phase" "true" || PRECONDITIONS_MET=false
+                ;;
+            "scope")
+                echo "Scope phase preconditions:"
+                check_precondition "Research notes exist" "test -f '$STORY_DIR/research-notes.md'" || PRECONDITIONS_MET=false
+                check_precondition "No unresolved contradictions" "check_no_unresolved_contradictions '$STORY_DIR/research-notes.md'" || PRECONDITIONS_MET=false
+                check_precondition "Ontology check completed" "grep -q 'Ontology Check' '$STORY_DIR/research-notes.md'" || PRECONDITIONS_MET=false
+                ;;
+            "design")
+                echo "Design phase preconditions:"
+                check_precondition "Research notes exist" "test -f '$STORY_DIR/research-notes.md'" || PRECONDITIONS_MET=false
+                check_precondition "Scope defined" "true" || PRECONDITIONS_MET=false
+                check_precondition "No unresolved contradictions" "check_no_unresolved_contradictions '$STORY_DIR/research-notes.md'" || PRECONDITIONS_MET=false
+                ;;
+            "decompose")
+                echo "Decompose phase preconditions:"
+                check_precondition "Design document exists" "test -f '$STORY_DIR/design.md'" || PRECONDITIONS_MET=false
+                check_precondition "Test architecture defined" "grep -qi 'test.*architecture\|e2e.*test' '$STORY_DIR/design.md'" || PRECONDITIONS_MET=false
+                ;;
+            "implement")
+                echo "Implement phase preconditions:"
+                check_precondition "Design document exists" "test -f '$STORY_DIR/design.md'" || PRECONDITIONS_MET=false
+                check_precondition "Task breakdown exists" "test -f '$STORY_DIR/tasks.md'" || PRECONDITIONS_MET=false
+                check_precondition "Tasks have test references" "grep -qi 'test:' '$STORY_DIR/tasks.md'" || PRECONDITIONS_MET=false
+                check_precondition "No unresolved contradictions" "check_no_unresolved_contradictions '$STORY_DIR/research-notes.md'" || PRECONDITIONS_MET=false
+                ;;
+            "validate")
+                echo "Validate phase preconditions:"
+                check_precondition "Task breakdown exists" "test -f '$STORY_DIR/tasks.md'" || PRECONDITIONS_MET=false
+                check_precondition "Implementation tasks complete" "! grep -q '^\- \[ \].*Task [0-9]' '$STORY_DIR/tasks.md' 2>/dev/null" || PRECONDITIONS_MET=false
+                ;;
+            "deploy")
+                echo "Deploy phase preconditions:"
+                check_precondition "Validation phase complete" "echo '$COMPLETED_PHASES' | grep -q 'validate'" || PRECONDITIONS_MET=false
+                ;;
+        esac
+
+        if [ "$PRECONDITIONS_MET" = true ]; then
+            echo ""
+            echo -e "${GREEN}All preconditions met for $TARGET_PHASE phase${NC}"
+            exit 0
+        else
+            echo ""
+            echo -e "${RED}Some preconditions not met. Address issues before proceeding.${NC}"
+            exit 1
+        fi
+        ;;
+
     "check")
         # Display current phase status
         echo -e "${BLUE}Engineering Process Status${NC}"
@@ -187,7 +270,7 @@ case "$ACTION" in
 
     *)
         echo "Unknown action: $ACTION" >&2
-        echo "Usage: phase-gate.sh [check|validate|list] [story-slug]" >&2
+        echo "Usage: phase-gate.sh [check|validate|list|preconditions] [story-slug] [target-phase]" >&2
         exit 1
         ;;
 esac

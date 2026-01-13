@@ -1,0 +1,39 @@
+{
+  "$schema": "./preferences-schema.json",
+  "description": "Tracks revealed user preferences across stories for consistency checking",
+  "version": "1.0.0",
+  "rejected": [
+    {
+      "pattern": "example: modals for confirmations",
+      "story": "example-story-slug",
+      "date": "2024-01-01",
+      "reason": "User found modals disruptive to workflow"
+    }
+  ],
+  "preferred": [
+    {
+      "pattern": "example: toast notifications for feedback",
+      "story": "example-story-slug",
+      "date": "2024-01-01",
+      "reason": "Non-blocking, user can continue working"
+    }
+  ],
+  "constraints": [
+    {
+      "type": "performance",
+      "requirement": "example: API responses under 500ms",
+      "story": "example-story-slug",
+      "date": "2024-01-01"
+    }
+  ],
+  "decisions": [
+    {
+      "topic": "example: authentication method",
+      "choice": "JWT with refresh tokens",
+      "alternatives_rejected": ["session cookies", "OAuth only"],
+      "story": "example-story-slug",
+      "date": "2024-01-01",
+      "rationale": "Needed for mobile app compatibility"
+    }
+  ]
+}
