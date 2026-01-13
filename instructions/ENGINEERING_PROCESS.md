@@ -73,6 +73,61 @@ The `<story-slug>` is derived from the story title (e.g., "add-user-authenticati
 | 7 | Validate | `@reviewer` | Verify quality | Review approval | Verify test coverage & quality |
 | 8 | Deploy | `@implementer` | Release | Deployed feature | Run full test suite pre/post deploy |
 
+## Delegation Model
+
+This workflow uses intelligent delegation to reduce user friction while preserving control where it matters.
+
+### User-Required Phases (Cannot Auto-Advance)
+
+| Phase | Why User Required |
+|-------|-------------------|
+| **1: Understand** | User Story refinement is the contract. User must confirm acceptance criteria, resolve ambiguous scenarios, and answer blocking questions. |
+| **8: Deploy (Production)** | Production deployment requires explicit user authorization. |
+
+### Auto-Advanceable Phases (Delegated to Agents)
+
+| Phase | Agent | Auto-Advance Criteria |
+|-------|-------|----------------------|
+| **2: Research** | `@explorer` | `research-notes.md` exists with required sections, no UNRESOLVED contradictions |
+| **3: Scope** | `@scope-analyst` | Scope is strictly additive and pattern-following; escalates reductions/novel changes |
+| **4: Design** | `@architect` | `design.md` exists, no simulation stuck points, test architecture defined |
+| **5: Decompose** | `@architect` | `tasks.md` exists with E2E tests first, each task has completion criteria |
+| **6: Implement** | `@implementer` | All tasks complete, E2E tests pass, linting passes |
+| **7: Validate** | `@reviewer` + `@validator` | All tests pass, zero critical/major issues, acceptance criteria mapped to tests |
+
+### Delegation Agents
+
+| Agent | Purpose |
+|-------|---------|
+| `@explorer` | Read-only codebase exploration |
+| `@architect` | Solution design and task breakdown |
+| `@implementer` | Code and test implementation |
+| `@reviewer` | Code review and quality verification |
+| `@validator` | Programmatic phase completion checks, auto-advance decisions |
+| `@scope-analyst` | Classify scope as auto-approvable vs. user-required |
+| `@decision-maker` | Select from alternatives when clear technical winner exists |
+
+### Auto-Advance Flow
+
+```
+Phase completes → @validator checks criteria
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+      ALL PASS      MINOR FAIL      CRITICAL FAIL
+         │               │               │
+         ▼               ▼               ▼
+   Auto-advance    Warn + advance    Block + report
+   to next phase   (log warnings)   (user must resolve)
+```
+
+### User Override
+
+All auto-decisions are documented and overrideable. Users can:
+- Review decisions in `design.md` and `tasks.md`
+- Override by editing artifacts and re-running phase
+- Force user confirmation with `/checkpoint` at any time
+
 ## Phase Execution
 
 For each phase:

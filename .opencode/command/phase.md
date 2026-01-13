@@ -42,8 +42,35 @@ description: Jump to or review a specific phase of the engineering process
 When completing a phase:
 1. Add the phase to `completedPhases` array in workflow state
 2. Record any artifacts created during the phase
-3. Run `/checkpoint` to validate completion
-4. Proceed to the next phase
+3. **Invoke `@validator`** to check completion criteria
+4. **Auto-advance or block** based on validator result
+
+### Auto-Advance Rules
+
+| Phase | Auto-Advance? | Condition |
+|-------|---------------|-----------|
+| understand | ❌ NO | User must confirm acceptance criteria |
+| research | ✅ YES | `research-notes.md` exists with required sections |
+| scope | 🟡 PARTIAL | Only if all scope items are GREEN (additive) |
+| design | ✅ YES | `design.md` complete, no stuck points |
+| decompose | ✅ YES | `tasks.md` complete with test references |
+| implement | ✅ YES | All tasks done, tests pass |
+| validate | ✅ YES | All tests pass, zero critical/major issues |
+| deploy | ❌ NO | User must authorize production deployment |
+
+### Auto-Advance Flow
+
+```
+Phase completes → @validator checks criteria
+                         │
+         ┌───────────────┼───────────────┐
+         ▼               ▼               ▼
+      ALL PASS      MINOR FAIL      CRITICAL FAIL
+         │               │               │
+         ▼               ▼               ▼
+   Auto-advance    Warn + advance    Block + report
+   to next phase   (log warnings)   (user must resolve)
+```
 
 ## Phase-to-File Mapping
 

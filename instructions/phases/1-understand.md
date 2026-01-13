@@ -3,8 +3,18 @@
 ## Purpose
 Comprehend the request—not just what's written, but what's meant. Build a mental model of the problem space before considering solutions.
 
+## ⚠️ USER-REQUIRED PHASE
+
+**This phase CANNOT be auto-advanced.** User Story refinement is the contract between user and system. The user must:
+- Confirm acceptance criteria
+- Resolve all ambiguous scenarios (no `???` markers)
+- Answer blocking questions
+- Approve the understanding before proceeding
+
+This phase is intentionally high-touch because incorrect understanding cascades through all subsequent phases.
+
 ## Agent
-None (main conversation handles this phase)
+None (main conversation handles this phase - requires direct user interaction)
 
 ## Activities
 

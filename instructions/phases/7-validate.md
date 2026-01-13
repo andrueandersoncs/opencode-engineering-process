@@ -5,8 +5,26 @@ Verify that the implementation is correct, secure, and meets all requirements. C
 
 **CRITICAL: Validation primarily means verifying that all tests pass and provide adequate coverage.**
 
+## ✅ AUTO-ADVANCEABLE PHASE
+
+This phase can auto-advance to Deploy when ALL conditions are met:
+
+| Criterion | Check |
+|-----------|-------|
+| All E2E tests pass | `npx playwright test` exits 0 |
+| All unit tests pass | `npx vitest run` exits 0 |
+| Zero critical issues | `@reviewer` finds no CRITICAL severity |
+| Zero major issues | `@reviewer` finds no MAJOR severity |
+| Acceptance criteria mapped | Each criterion has a passing test |
+
+**Auto-advance:** If all above pass, proceed to Deploy (staging only - production requires user).
+
+**Block and report:** If any critical/major issues found, or tests fail.
+
+**Minor issues:** Warn but allow advance (logged for future cleanup).
+
 ## Agent
-**Delegate to: `@reviewer`**
+**Delegate to: `@reviewer`** for code review, then `@validator` for programmatic checks.
 
 The reviewer agent performs thorough code review without making changes.
 
