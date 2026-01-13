@@ -9,6 +9,11 @@
     "build": {
       "mode": "primary",
       "description": "Default agent with full access - delegates to specialized agents during engineering workflow"
+    },
+    "story-generator": {
+      "mode": "subagent",
+      "description": "Generates comprehensive user stories from minimal input by researching context and making documented assumptions",
+      "template": "@.opencode/agent/story-generator.md"
     }
   },
   "command": {
@@ -23,6 +28,10 @@
     "checkpoint": {
       "description": "Validate current phase completion before proceeding",
       "template": "@.opencode/command/checkpoint.md"
+    },
+    "generate-story": {
+      "description": "Generate detailed user stories from minimal input with assumption-first approach",
+      "template": "@.opencode/command/generate-story.md"
     }
   }
 }
