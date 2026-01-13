@@ -1,12 +1,13 @@
 #!/bin/bash
 #
-# Phase Gate Validation Script for OpenCode Engineering Process
+# Phase Gate Validation Script
 # Validates phase transitions and enforces workflow constraints
 #
 # Usage:
 #   phase-gate.sh [action] [story-slug] [target-phase]
 #
 # Actions:
+#   pre-write     - Validate before write/edit operations
 #   check         - Display current phase status
 #   validate      - Validate current phase completion
 #   list          - List all stories
@@ -25,8 +26,14 @@ STORIES_DIR="docs/stories"
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
 NC='\033[0m' # No Color
+
+# Read stdin for hook input (if provided)
+if [ -t 0 ]; then
+    INPUT=""
+else
+    INPUT=$(cat)
+fi
 
 # Find the most recently modified story if no slug provided
 find_active_story() {
@@ -53,7 +60,7 @@ WORKFLOW_STATE="$STORY_DIR/workflow-state.json"
 
 # Handle list action separately (doesn't need active story)
 if [ "$ACTION" = "list" ]; then
-    echo -e "${BLUE}Engineering Process Stories${NC}"
+    echo "Engineering Process Stories"
     echo "==========================="
     if [ -d "$STORIES_DIR" ]; then
         for state_file in "$STORIES_DIR"/*/workflow-state.json; do
@@ -62,7 +69,7 @@ if [ "$ACTION" = "list" ]; then
                 SLUG=$(basename "$DIR")
                 STORY=$(jq -r '.story // "unknown"' "$state_file" 2>/dev/null || echo "unknown")
                 PHASE=$(jq -r '.currentPhase // "unknown"' "$state_file" 2>/dev/null || echo "unknown")
-                echo -e "  ${GREEN}$SLUG${NC}: $STORY (phase: ${YELLOW}$PHASE${NC})"
+                echo "  $SLUG: $STORY (phase: $PHASE)"
             fi
         done
     else
@@ -73,17 +80,21 @@ fi
 
 # Check if we're in a workflow
 if [ -z "$STORY_DIR" ] || [ ! -f "$WORKFLOW_STATE" ]; then
-    echo -e "${YELLOW}No active workflow found${NC}"
-    echo "Start a workflow with: /story <description or issue URL>"
+    # No workflow active, allow all operations
     exit 0
 fi
 
 # Parse workflow state
 CURRENT_PHASE=$(jq -r '.currentPhase // "unknown"' "$WORKFLOW_STATE" 2>/dev/null || echo "unknown")
-COMPLETED_PHASES=$(jq -r '.completedPhases // [] | join(", ")' "$WORKFLOW_STATE" 2>/dev/null || echo "")
+COMPLETED_PHASES=$(jq -r '.completedPhases // [] | join(",")' "$WORKFLOW_STATE" 2>/dev/null || echo "")
 STORY=$(jq -r '.story // "unknown"' "$WORKFLOW_STATE" 2>/dev/null || echo "unknown")
 SLUG=$(jq -r '.slug // "unknown"' "$WORKFLOW_STATE" 2>/dev/null || basename "$STORY_DIR")
-STARTED_AT=$(jq -r '.startedAt // "unknown"' "$WORKFLOW_STATE" 2>/dev/null || echo "unknown")
+
+# Helper function to check if phase is completed
+phase_completed() {
+    local phase="$1"
+    echo "$COMPLETED_PHASES" | grep -q "$phase"
+}
 
 # Helper function to check preconditions
 check_precondition() {
@@ -168,100 +179,106 @@ case "$ACTION" in
         fi
         ;;
 
+    "pre-write")
+        # Validate before write/edit operations
+
+        # Block writes during understand phase
+        if [ "$CURRENT_PHASE" = "understand" ]; then
+            echo "Phase gate: In 'understand' phase - file modifications not expected yet." >&2
+            echo "Tip: Complete requirements analysis before modifying files." >&2
+            # Warning only, don't block
+            exit 0
+        fi
+
+        # Block writes during research phase (explorer agent should be read-only)
+        if [ "$CURRENT_PHASE" = "research" ]; then
+            echo "Phase gate: In 'research' phase - file modifications should wait." >&2
+            echo "Tip: Complete research and move to design phase first." >&2
+            # Warning only, don't block
+            exit 0
+        fi
+
+        # Warn if writing during scope phase
+        if [ "$CURRENT_PHASE" = "scope" ]; then
+            echo "Phase gate: In 'scope' phase - ensure scope is defined before implementing." >&2
+            exit 0
+        fi
+
+        # Require design doc before implementation
+        if [ "$CURRENT_PHASE" = "implement" ]; then
+            DESIGN_DOC="$STORY_DIR/design.md"
+            if [ ! -f "$DESIGN_DOC" ]; then
+                echo "Phase gate: Design document not found at: $DESIGN_DOC" >&2
+                echo "Tip: Complete the design phase before implementing." >&2
+                # Warning only
+                exit 0
+            fi
+        fi
+
+        # All checks passed
+        exit 0
+        ;;
+
     "check")
         # Display current phase status
-        echo -e "${BLUE}Engineering Process Status${NC}"
+        echo "Engineering Process Status"
         echo "=========================="
-        echo -e "Story:     ${GREEN}$STORY${NC}"
-        echo -e "Slug:      $SLUG"
-        echo -e "Directory: $STORY_DIR"
-        echo -e "Phase:     ${YELLOW}$CURRENT_PHASE${NC}"
-        echo -e "Completed: $COMPLETED_PHASES"
-        echo -e "Started:   $STARTED_AT"
-        echo ""
+        echo "Story: $STORY"
+        echo "Slug: $SLUG"
+        echo "Directory: $STORY_DIR"
+        echo "Current Phase: $CURRENT_PHASE"
+        echo "Completed: $COMPLETED_PHASES"
 
         # Show artifacts
-        echo -e "${BLUE}Artifacts:${NC}"
-        [ -f "$STORY_DIR/research-notes.md" ] && echo -e "  ${GREEN}✓${NC} research-notes.md"
-        [ -f "$STORY_DIR/design.md" ] && echo -e "  ${GREEN}✓${NC} design.md"
-        [ -f "$STORY_DIR/tasks.md" ] && echo -e "  ${GREEN}✓${NC} tasks.md"
-
-        [ ! -f "$STORY_DIR/research-notes.md" ] && [ "$CURRENT_PHASE" != "understand" ] && echo -e "  ${RED}✗${NC} research-notes.md (missing)"
-        [ ! -f "$STORY_DIR/design.md" ] && [ "$CURRENT_PHASE" = "implement" -o "$CURRENT_PHASE" = "validate" -o "$CURRENT_PHASE" = "deploy" ] && echo -e "  ${RED}✗${NC} design.md (missing)"
-        [ ! -f "$STORY_DIR/tasks.md" ] && [ "$CURRENT_PHASE" = "implement" -o "$CURRENT_PHASE" = "validate" -o "$CURRENT_PHASE" = "deploy" ] && echo -e "  ${RED}✗${NC} tasks.md (missing)"
+        echo "Artifacts:"
+        [ -f "$STORY_DIR/research-notes.md" ] && echo "  - research: $STORY_DIR/research-notes.md"
+        [ -f "$STORY_DIR/design.md" ] && echo "  - design: $STORY_DIR/design.md"
+        [ -f "$STORY_DIR/tasks.md" ] && echo "  - tasks: $STORY_DIR/tasks.md"
 
         exit 0
         ;;
 
     "validate")
         # Validate current phase completion
-        echo -e "${BLUE}Validating phase: ${YELLOW}$CURRENT_PHASE${NC} (story: $SLUG)"
-        echo ""
+        echo "Validating phase: $CURRENT_PHASE (story: $SLUG)"
 
         case "$CURRENT_PHASE" in
             "understand")
                 echo "Understand phase validation:"
-                echo -e "  ${YELLOW}•${NC} Requirements should be documented"
-                echo -e "  ${YELLOW}•${NC} Ambiguities should be resolved"
-                echo -e "  ${YELLOW}•${NC} Assumptions should be listed"
+                echo "  - Requirements should be documented"
+                echo "  - Ambiguities should be resolved"
                 ;;
             "research")
-                echo "Research phase validation:"
                 if [ -f "$STORY_DIR/research-notes.md" ]; then
-                    echo -e "  ${GREEN}✓${NC} Research notes exist"
+                    echo "  [OK] Research notes exist: $STORY_DIR/research-notes.md"
                 else
-                    echo -e "  ${RED}✗${NC} Research notes not found"
+                    echo "  [WARN] Research notes not found"
                 fi
-                ;;
-            "scope")
-                echo "Scope phase validation:"
-                echo -e "  ${YELLOW}•${NC} In-scope items should be defined"
-                echo -e "  ${YELLOW}•${NC} Out-of-scope items should be listed"
-                echo -e "  ${YELLOW}•${NC} Minimal viable implementation identified"
                 ;;
             "design")
-                echo "Design phase validation:"
                 if [ -f "$STORY_DIR/design.md" ]; then
-                    echo -e "  ${GREEN}✓${NC} Design document exists"
+                    echo "  [OK] Design document exists: $STORY_DIR/design.md"
                 else
-                    echo -e "  ${RED}✗${NC} Design document not found"
-                fi
-                ;;
-            "decompose")
-                echo "Decompose phase validation:"
-                if [ -f "$STORY_DIR/tasks.md" ]; then
-                    echo -e "  ${GREEN}✓${NC} Task breakdown exists"
-                else
-                    echo -e "  ${RED}✗${NC} Task breakdown not found"
+                    echo "  [WARN] Design document not found"
                 fi
                 ;;
             "implement")
-                echo "Implement phase validation:"
                 if [ -f "$STORY_DIR/tasks.md" ]; then
-                    echo -e "  ${GREEN}✓${NC} Task breakdown exists"
+                    echo "  [OK] Task breakdown exists: $STORY_DIR/tasks.md"
                     # Check for incomplete tasks
                     INCOMPLETE=$(grep -c '^\- \[ \]' "$STORY_DIR/tasks.md" 2>/dev/null || echo "0")
-                    COMPLETE=$(grep -c '^\- \[x\]' "$STORY_DIR/tasks.md" 2>/dev/null || echo "0")
-                    echo -e "  ${BLUE}ℹ${NC} Tasks complete: $COMPLETE"
-                    echo -e "  ${BLUE}ℹ${NC} Tasks remaining: $INCOMPLETE"
+                    echo "  [INFO] Incomplete tasks: $INCOMPLETE"
                 else
-                    echo -e "  ${RED}✗${NC} Task breakdown not found"
+                    echo "  [WARN] Task breakdown not found"
                 fi
                 ;;
             "validate")
-                echo "Validate phase checks:"
-                echo -e "  ${YELLOW}•${NC} Ensure code review is complete"
-                echo -e "  ${YELLOW}•${NC} Ensure all tests pass"
-                echo -e "  ${YELLOW}•${NC} Verify acceptance criteria"
+                echo "  - Ensure code review is complete"
+                echo "  - Ensure all tests pass"
                 ;;
             "deploy")
-                echo "Deploy phase checks:"
-                echo -e "  ${YELLOW}•${NC} Ensure deployment is successful"
-                echo -e "  ${YELLOW}•${NC} Ensure monitoring is in place"
-                echo -e "  ${YELLOW}•${NC} Notify stakeholders"
-                ;;
-            "complete")
-                echo -e "${GREEN}Workflow is complete!${NC}"
+                echo "  - Ensure deployment is successful"
+                echo "  - Ensure monitoring is in place"
                 ;;
         esac
 
@@ -270,7 +287,7 @@ case "$ACTION" in
 
     *)
         echo "Unknown action: $ACTION" >&2
-        echo "Usage: phase-gate.sh [check|validate|list|preconditions] [story-slug] [target-phase]" >&2
+        echo "Usage: phase-gate.sh [pre-write|check|validate|list|preconditions] [story-slug] [target-phase]" >&2
         exit 1
         ;;
 esac

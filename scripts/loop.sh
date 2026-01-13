@@ -1,9 +1,9 @@
 #!/bin/bash
 #
-# Autonomous Loop Orchestrator (Ralph Wiggum Style) - OpenCode Edition
+# Autonomous Loop Orchestrator (Ralph Wiggum Style)
 #
 # This script implements the "Ralph Playbook" pattern for autonomous AI-assisted
-# development using OpenCode. Each iteration:
+# development. Each iteration:
 #   1. Spawns a fresh OpenCode context (avoiding context pollution)
 #   2. Loads only the task file and relevant context
 #   3. Executes ONE task
@@ -89,7 +89,7 @@ check_implement_phase() {
     return 0
 }
 
-# Build the prompt for OpenCode
+# Build the prompt for Claude
 build_prompt() {
     local task_id="$1"
     local task_title="$2"
@@ -217,34 +217,22 @@ main() {
         local prompt
         prompt=$(build_prompt "$task_id" "$task_title" "$task_description" "$task_files" "$task_criteria" "$story_dir")
 
-        # Build context by concatenating files into prompt
-        local full_prompt="$prompt"
-        full_prompt+="\n\n---\n\n# Context: tasks.md\n\n"
-        full_prompt+=$(cat "$tasks_file")
-
-        if [ -f "$story_dir/design.md" ]; then
-            full_prompt+="\n\n---\n\n# Context: design.md\n\n"
-            full_prompt+=$(cat "$story_dir/design.md")
-        fi
-
-        if [ -f "$story_dir/research-notes.md" ]; then
-            full_prompt+="\n\n---\n\n# Context: research-notes.md\n\n"
-            full_prompt+=$(cat "$story_dir/research-notes.md")
-        fi
+        # Build context file list
+        local context_args=()
+        context_args+=("--print" "$tasks_file")
+        [ -f "$story_dir/design.md" ] && context_args+=("--print" "$story_dir/design.md")
+        [ -f "$story_dir/research-notes.md" ] && context_args+=("--print" "$story_dir/research-notes.md")
 
         # Add any additional context files
         if [ -n "$CONTEXT_FILES" ]; then
             for cf in $CONTEXT_FILES; do
-                if [ -f "$cf" ]; then
-                    full_prompt+="\n\n---\n\n# Context: $cf\n\n"
-                    full_prompt+=$(cat "$cf")
-                fi
+                [ -f "$cf" ] && context_args+=("--print" "$cf")
             done
         fi
 
         if [ "$DRY_RUN" = "1" ]; then
             log_info "[DRY RUN] Would execute:"
-            echo "$OPENCODE_BIN --prompt \"...\""
+            echo "$OPENCODE_BIN ${context_args[*]} --prompt \"...\""
             "$SCRIPT_DIR/mark-complete.sh" "$tasks_file" "$task_id" "complete"
             completed=$((completed + 1))
             continue
@@ -253,14 +241,8 @@ main() {
         # Execute OpenCode with fresh context
         log_info "Spawning fresh OpenCode context..."
 
-        # Write prompt to temp file for OpenCode
-        local prompt_file
-        prompt_file=$(mktemp)
-        echo -e "$full_prompt" > "$prompt_file"
-
-        if $OPENCODE_BIN --prompt "$(cat "$prompt_file")"; then
+        if $OPENCODE_BIN "${context_args[@]}" --prompt "$prompt"; then
             log_success "Task execution completed"
-            rm -f "$prompt_file"
 
             # Run validation if not skipped
             if [ "$SKIP_VALIDATION" != "1" ]; then
@@ -282,7 +264,6 @@ main() {
             fi
         else
             log_error "Task execution failed"
-            rm -f "$prompt_file"
             failed=$((failed + 1))
             # Leave task as in_progress
         fi
@@ -314,7 +295,7 @@ main() {
 # Show help
 if [ "$1" = "-h" ] || [ "$1" = "--help" ]; then
     cat <<EOF
-Autonomous Loop Orchestrator (Ralph Wiggum Style) - OpenCode Edition
+Autonomous Loop Orchestrator (Ralph Wiggum Style)
 
 Usage:
   ./loop.sh [story-slug]

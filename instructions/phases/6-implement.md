@@ -1,14 +1,69 @@
 # Phase 6: Implement
 
 ## Purpose
-Write tests FIRST, then code that makes them pass. Follow the task breakdown using strict TDD: Red → Green → Refactor.
+Write tests first, then code that makes them pass. Execute tasks using the **autonomous loop** for fresh context per task.
 
 **CRITICAL: E2E tests MUST be written and verified to FAIL before any implementation code is written.**
 
-## Agent
-**Delegate to: `@implementer`**
+## Execution Model: Autonomous Loop
 
-The implementer agent has full write access and follows established patterns with test-first discipline.
+**Phase 6 operates differently from other phases.** Instead of delegating all work to a single agent, this phase uses the **Ralph Wiggum loop pattern**:
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  MAIN AGENT BECOMES SCHEDULER - DO NOT DELEGATE ALL TASKS      │
+│                                                                 │
+│  Fresh context per task = 100% smart zone utilization          │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Why Loop Mode?
+
+With ~176K usable tokens in a 200K context window:
+- **Single-context approach**: Early tasks get full quality, later tasks degrade as context fills
+- **Loop approach**: Every task gets fresh context, maintaining quality throughout
+
+### Starting the Loop (Agent-Invoked)
+
+**The orchestrator agent automatically invokes the loop when entering this phase.**
+
+When entering Phase 6, the orchestrator runs:
+
+```bash
+./scripts/loop.sh "<story-slug>"
+```
+
+The user does NOT need to run this manually - the workflow handles it automatically.
+
+#### Loop Options (for manual runs if needed)
+
+```bash
+# Preview without executing (dry run)
+DRY_RUN=1 ./scripts/loop.sh "<story-slug>"
+
+# Skip validation between tasks (faster, riskier)
+SKIP_VALIDATION=1 ./scripts/loop.sh "<story-slug>"
+
+# Limit iterations
+MAX_ITERATIONS=10 ./scripts/loop.sh "<story-slug>"
+```
+
+### Loop Execution Flow
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  1. Parse tasks.md, find next incomplete task                │
+│  2. Mark task as in_progress                                 │
+│  3. Spawn FRESH OpenCode context with:                       │
+│     - Single task details only                               │
+│     - Relevant context (tasks.md, design.md, research.md)    │
+│  4. Execute ONE task (@implementer behavior)                 │
+│  5. Run validation (tests/lint/typecheck as backpressure)    │
+│  6. If PASS: mark task complete, loop to step 1              │
+│  7. If FAIL: leave in_progress, report failure               │
+│  8. Repeat until all tasks complete                          │
+└──────────────────────────────────────────────────────────────┘
+```
 
 ## The Test-First Mandate
 
@@ -24,18 +79,20 @@ The implementer agent has full write access and follows established patterns wit
 3. **Tests guide design** - Writing tests first leads to better interfaces
 4. **Tests prevent gold-plating** - You only write what's needed to pass
 
-## Activities
+## Pre-Loop Setup
 
-### 1. Setup
-Before writing ANY code:
-- Review design document
-- Review task breakdown (which should start with "Write failing E2E test")
-- Understand acceptance criteria as test scenarios
-- Check existing test patterns for reference
+Before starting the loop:
 
-### 2. Write E2E Tests FIRST (CRITICAL)
+1. **Verify tasks.md exists** with proper structure
+2. **Verify first task(s) are "Write failing E2E test"**
+3. **Review design.md** to understand the approach
+4. **Check test infrastructure** is ready (Playwright, Vitest, etc.)
 
-**This is the FIRST implementation task, before any feature code.**
+## Task Execution (Per-Task Behavior)
+
+Each loop iteration spawns a fresh context that:
+
+### 1. Writes E2E Tests FIRST (if task requires)
 
 ```typescript
 // Example: tests/e2e/user-login.spec.ts
@@ -47,12 +104,11 @@ test('user can log in with valid credentials', async ({ page }) => {
   await page.getByLabel('Password').fill('password123');
   await page.getByRole('button', { name: 'Sign in' }).click();
   await expect(page).toHaveURL('/dashboard');
+  await expect(page.getByText('Welcome')).toBeVisible();
 });
 ```
 
-### 3. Verify Tests FAIL
-
-**CRITICAL: Run the tests and confirm they fail. This is not optional.**
+### 2. Verifies Tests FAIL
 
 ```bash
 npx playwright test user-login.spec.ts
@@ -64,172 +120,176 @@ If tests pass immediately, something is wrong:
 - Test is too vague
 - Feature already exists (verify scope)
 
-### 4. Implement to Make Tests Pass
+### 3. Implements to Make Tests Pass
 
-**Only now do you write implementation code.**
-
-For each implementation task:
+Write the **minimum code** to make the test pass:
 1. Read the failing test to understand what's needed
-2. Write the **minimum code** to make the test pass
+2. Implement only what's required
 3. Run the test to verify it passes
-4. Refactor if needed while keeping tests green
-5. Commit with clear message
-6. Mark task complete
+4. Commit with clear message
 
-### 5. The Red-Green-Refactor Cycle
+### 4. The Red-Green-Refactor Cycle
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│  RED: Write failing test                                        │
-│       ↓                                                         │
-│  GREEN: Write minimum code to pass                              │
-│       ↓                                                         │
-│  REFACTOR: Clean up while staying green                         │
-│       ↓                                                         │
-│  REPEAT for next feature                                        │
-└─────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────┐
+│  RED: Write failing test                        │
+│       ↓                                         │
+│  GREEN: Write minimum code to pass              │
+│       ↓                                         │
+│  REFACTOR: Clean up while staying green         │
+│       ↓                                         │
+│  COMMIT: Clear message referencing task         │
+└─────────────────────────────────────────────────┘
 ```
 
-### 6. Quality Checks
-Throughout implementation:
-- Follow project conventions
-- Keep code simple
-- Handle errors appropriately
-- Add logging where useful
+## Validation as Backpressure
 
-### 4. Progress Tracking
-Keep workflow state updated:
-- Mark tasks complete as finished
-- Note any blockers or deviations
-- Update if scope changes
+After each task, the loop runs validation:
 
-## Delegation to Implementer Agent
-
-```
-@implementer Implementation phase for [feature description]
-
-Design document: docs/stories/<slug>/design.md
-Task breakdown: docs/stories/<slug>/tasks.md
-
-Current task: [Task X.Y from breakdown]
-
-Context:
-- [Relevant context from previous phases]
-- [Any decisions made during design]
-
-Constraints:
-- Follow patterns from [location]
-- Tests required for all new code
-
-Expected output:
-- Working code with tests
-- Updated task breakdown
-- Notes on any issues discovered
+```bash
+# Auto-detected by run-validation.sh:
+- npm test / yarn test / pnpm test
+- npm run lint / eslint
+- npm run typecheck / tsc --noEmit
 ```
 
-## Implementation Flow
+**Validation failures block progress.** The task remains `in_progress` until:
+- The issue is fixed
+- The loop is re-run
+
+This creates **downstream backpressure** - invalid work is rejected automatically.
+
+## Implementation Order
+
+Tasks should follow this order (enforced by task dependencies):
 
 ```
-┌─────────────────────────────────────────────────────┐
-│  For each task in tasks.md:                         │
-│                                                     │
-│  1. Read the task and its dependencies              │
-│  2. Check if dependencies are complete              │
-│  3. Implement the functionality                     │
-│  4. Write/update tests                              │
-│  5. Run tests locally                               │
-│  6. Mark task [x] complete in tasks.md              │
-│  7. Commit with descriptive message                 │
-│                                                     │
-│  If blocked:                                        │
-│  - Document the blocker                             │
-│  - Propose solutions                                │
-│  - Escalate if needed                               │
-└─────────────────────────────────────────────────────┘
+0. Write E2E tests (MUST BE FIRST)
+   ↓ Verify tests FAIL
+   ↓
+1. Database/Schema changes (if any)
+   ↓
+2. Data layer / Models
+   ↓
+3. Business logic / Services + Unit tests
+   ↓
+4. API endpoints / Controllers
+   ↓
+5. UI components (if any)
+   ↓
+6. Integration / Wiring
+   ↓
+7. Verify all E2E tests PASS
 ```
 
-## Commit Strategy
+## Handling Loop Failures
 
-### Commit Frequency
-- After each completed task
-- When reaching a stable intermediate state
-- Before major changes to enable rollback
-
-### Commit Messages
-Follow conventional commits:
+### Task Execution Failed
 ```
-feat: add user authentication endpoint
-fix: correct validation for email field
-test: add integration tests for login flow
-refactor: extract auth middleware to separate file
-docs: update API documentation for auth
+1. Loop leaves task as in_progress
+2. Review the error output
+3. Fix the issue manually or adjust task scope
+4. Re-run the loop
 ```
 
-## Quality Checklist
-
-Before marking implementation complete:
-
-### Testing (CRITICAL)
-- [ ] **E2E tests were written FIRST and verified to FAIL**
-- [ ] **All E2E tests now PASS**
-- [ ] Unit tests for complex business logic
-- [ ] Edge cases covered by tests
-- [ ] All tests passing
-
-### Code Quality
-- [ ] Follows project style guide
-- [ ] No linting errors
-- [ ] No hardcoded values that should be config
-- [ ] No sensitive data in code
-- [ ] Error handling is appropriate
-
-### Documentation
-- [ ] Code is self-documenting or has comments
-- [ ] API documentation updated if needed
-- [ ] README updated if needed
-
-### Cleanup
-- [ ] No TODO comments left unaddressed
-- [ ] No commented-out code
-- [ ] No debug logging left in
-
-## Handling Issues
+### Validation Failed
+```
+1. Tests/lint failed after implementation
+2. Task remains in_progress
+3. Fix the failing tests or lint issues
+4. Re-run the loop (it will retry the same task)
+```
 
 ### Design Doesn't Work
-1. Stop implementation
-2. Document what doesn't work
-3. Propose alternative
-4. Get design revision before continuing
+```
+1. Stop the loop (Ctrl+C)
+2. Document the issue in tasks.md or design.md
+3. Return to design phase if needed: /phase design
+4. Regenerate tasks if design changed significantly
+```
 
-### Missing Information
-1. Check research notes
-2. Make reasonable assumption
-3. Document the assumption
-4. Flag for review phase
+### Blocked by Dependencies
+```
+1. Check if task dependencies are properly marked
+2. Verify blocking tasks are complete
+3. If circular dependency: refactor tasks.md
+4. Re-run the loop
+```
 
-### Technical Blockers
-1. Document the blocker
-2. Identify workarounds
-3. Escalate for decision
+## Commit Guidelines
+
+### Message Format
+```
+type: short description
+
+Longer explanation if needed.
+
+- Bullet points for details
+- Reference to task: Task X.Y
+```
+
+### Types
+- `feat`: New feature
+- `fix`: Bug fix
+- `test`: Adding tests
+- `refactor`: Code change that doesn't change behavior
+- `docs`: Documentation changes
+- `chore`: Maintenance tasks
+
+### Frequency
+- One commit per task (loop handles this naturally)
+- Each commit should build/test successfully
+
+## Quality Checklist (Per Task)
+
+Each task completion requires:
+- [ ] **E2E test written FIRST and verified to FAIL** (if applicable)
+- [ ] **E2E test now PASSES after implementation**
+- [ ] Implementation matches design
+- [ ] Unit tests cover complex logic
+- [ ] All tests pass locally
+- [ ] No linting errors
+- [ ] No type errors
+- [ ] Follows project conventions
+
+## Loop Completion
+
+The loop exits when:
+- All tasks in tasks.md are marked `[x]` complete
+- Or MAX_ITERATIONS reached (safety limit)
+
+### Success Output
+```
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[INFO] Loop Summary
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  Iterations: 8
+  Completed:  8
+  Failed:     0
+
+[SUCCESS] All tasks completed! Ready for validation phase.
+[INFO] Run '/phase validate' to proceed.
+```
+
+## Output
+
+After loop completion:
+- **All E2E tests passing**
+- All implementation tasks complete
+- All unit tests passing
+- Commit history with clear messages
+- tasks.md fully marked complete
 
 ## Completion Criteria
 
+- [ ] **CRITICAL: Loop completed successfully (all tasks done)**
 - [ ] **CRITICAL: All E2E tests pass**
 - [ ] **CRITICAL: Tests were written BEFORE implementation**
-- [ ] All tasks in breakdown are marked complete
-- [ ] All unit tests passing
+- [ ] All tasks in breakdown are complete (`[x]`)
+- [ ] All unit tests pass
+- [ ] No linting errors
 - [ ] Code follows project conventions
-- [ ] Changes committed with clear messages
-- [ ] No blocking issues remain
-
-## Common Pitfalls
-
-1. **Scope Creep** - Adding features not in design
-2. **Skipping Tests** - "I'll add them later"
-3. **Ignoring Patterns** - Not following existing conventions
-4. **Silent Deviation** - Changing design without documenting
-5. **Tests After Implementation** - Writing tests last instead of first (VIOLATES TDD)
-6. **Skipping Test Verification** - Not confirming tests fail before implementation
+- [ ] All commits have clear messages
 
 ## Next Phase
-Proceed to Phase 7: Validate when criteria are met.
+Proceed to Phase 7: Validate when the loop completes successfully.

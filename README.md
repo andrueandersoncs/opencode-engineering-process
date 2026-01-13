@@ -105,7 +105,7 @@ docs/stories/<story-slug>/
 
 ## Autonomous Loop Mode
 
-For maximum productivity during the **implement** phase, use the autonomous loop orchestrator. This implements the "Ralph Wiggum" pattern: fresh context per task, tight scope, validation as backpressure.
+During the **implement** phase, the orchestrator **automatically invokes** the autonomous loop script. This implements the "Ralph Wiggum" pattern: fresh context per task, tight scope, validation as backpressure.
 
 ### Why Autonomous Looping?
 
@@ -116,18 +116,15 @@ The key insight: only ~176K of a 200K token context is truly usable (the "smart 
 3. **Validation gate** - Tests/lint constrain non-determinism
 4. **Persistent state** - `tasks.md` survives across loops
 
-### Running the Loop
+### How It Works
+
+When the orchestrator enters Phase 6 (Implement), it automatically runs:
 
 ```bash
-# After completing phases 1-5 (understand through decompose)
-/phase implement
-
-# Start autonomous implementation
-./scripts/loop.sh
-
-# Or specify a story
-./scripts/loop.sh add-authentication
+./scripts/loop.sh "<story-slug>"
 ```
+
+**Users don't need to run this manually** - the workflow handles it.
 
 ### Loop Options
 

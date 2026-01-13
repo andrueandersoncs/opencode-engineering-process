@@ -62,16 +62,18 @@ The `<story-slug>` is derived from the story title (e.g., "add-user-authenticati
 
 ## Phase Overview
 
-| # | Phase | Agent | Purpose | Key Output | Testing Focus |
-|---|-------|-------|---------|------------|---------------|
+| # | Phase | Execution | Purpose | Key Output | Testing Focus |
+|---|-------|-----------|---------|------------|---------------|
 | 1 | Understand | - | Comprehend requirements | Clarified requirements | Extract testable acceptance criteria |
 | 2 | Research | `@explorer` | Explore codebase | Research notes | Document test patterns & infrastructure |
 | 3 | Scope | - | Define boundaries | Scope definition | Define test scope (required vs optional) |
 | 4 | Design | `@architect` | Plan solution | Design document | Design test architecture |
 | 5 | Decompose | `@architect` | Break into tasks | Task breakdown | **Each task MUST reference its tests** |
-| 6 | Implement | `@implementer` | Write tests, then code | **Passing E2E tests** + code | **Write failing test FIRST** |
+| 6 | Implement | **LOOP MODE** | Write tests, then code | **Passing E2E tests** + code | **Write failing test FIRST** |
 | 7 | Validate | `@reviewer` | Verify quality | Review approval | Verify test coverage & quality |
 | 8 | Deploy | `@implementer` | Release | Deployed feature | Run full test suite pre/post deploy |
+
+> **IMPORTANT**: Phase 6 uses **Autonomous Loop Mode** instead of single-agent delegation. See [Autonomous Loop Mode](#autonomous-loop-mode-phase-6) section below.
 
 ## Delegation Model
 
@@ -84,15 +86,15 @@ This workflow uses intelligent delegation to reduce user friction while preservi
 | **1: Understand** | User Story refinement is the contract. User must confirm acceptance criteria, resolve ambiguous scenarios, and answer blocking questions. |
 | **8: Deploy (Production)** | Production deployment requires explicit user authorization. |
 
-### Auto-Advanceable Phases (Delegated to Agents)
+### Auto-Advanceable Phases (Delegated to Agents or Loop)
 
-| Phase | Agent | Auto-Advance Criteria |
-|-------|-------|----------------------|
+| Phase | Execution | Auto-Advance Criteria |
+|-------|-----------|----------------------|
 | **2: Research** | `@explorer` | `research-notes.md` exists with required sections, no UNRESOLVED contradictions |
 | **3: Scope** | `@scope-analyst` | Scope is strictly additive and pattern-following; escalates reductions/novel changes |
 | **4: Design** | `@architect` | `design.md` exists, no simulation stuck points, test architecture defined |
 | **5: Decompose** | `@architect` | `tasks.md` exists with E2E tests first, each task has completion criteria |
-| **6: Implement** | `@implementer` | All tasks complete, E2E tests pass, linting passes |
+| **6: Implement** | **LOOP MODE** | Loop completes: all tasks `[x]`, E2E tests pass, linting passes |
 | **7: Validate** | `@reviewer` + `@validator` | All tests pass, zero critical/major issues, acceptance criteria mapped to tests |
 
 ### Delegation Agents
@@ -136,6 +138,84 @@ For each phase:
 3. **Validate completion** using phase criteria before proceeding
 4. **Update workflow state** with completed phase and artifacts
 5. **Proceed to next phase** only when criteria are met
+
+### Special Case: Phase 6 (Implement)
+
+**Phase 6 does NOT delegate to an agent.** Instead, YOU (the orchestrator) must invoke the autonomous loop script:
+
+```bash
+# Run from the project directory
+./scripts/loop.sh "<story-slug>"
+```
+
+The loop script handles spawning fresh contexts for each task. Do not delegate to `@implementer` directly - the loop will do that for each task.
+
+## Autonomous Loop Mode (Phase 6)
+
+**Phase 6 operates differently from all other phases.** Instead of delegating to a single agent that works through all tasks in one context, Phase 6 uses the **autonomous loop** pattern.
+
+### Why Loop Mode?
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│  Fresh context per task = 100% "smart zone" utilization        │
+│                                                                 │
+│  Single-context: Early tasks get full quality, later degrade   │
+│  Loop mode: EVERY task gets fresh context, quality maintained  │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+With ~176K usable tokens in a 200K context window, running multiple tasks in one context means:
+- Early tasks get ~100% smart zone quality
+- Later tasks compete with accumulated context from earlier work
+- Quality degrades as the session progresses
+
+The loop pattern ensures every task gets the full benefit of a fresh context.
+
+### Loop Execution (Agent-Invoked)
+
+**The orchestrator agent automatically invokes the loop when entering Phase 6.**
+
+When you (the orchestrator) enter Phase 6, run:
+
+```bash
+./scripts/loop.sh "<story-slug>"
+```
+
+Where `<story-slug>` is from the workflow state (e.g., "add-user-authentication").
+
+The user does NOT need to run this manually - you invoke it as part of the workflow.
+
+### What the Loop Does
+
+```
+┌──────────────────────────────────────────────────────────────┐
+│  1. Parse tasks.md, find next incomplete task                │
+│  2. Mark task as in_progress                                 │
+│  3. Spawn FRESH OpenCode context with SINGLE task            │
+│  4. Execute ONE task only                                    │
+│  5. Run validation (tests/lint/typecheck)                    │
+│  6. If PASS: mark task complete, loop to step 1              │
+│  7. If FAIL: leave in_progress, report failure               │
+│  8. Repeat until all tasks complete                          │
+└──────────────────────────────────────────────────────────────┘
+```
+
+### Loop Configuration
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `DRY_RUN=1` | 0 | Preview commands without executing |
+| `SKIP_VALIDATION=1` | 0 | Skip tests between tasks (faster, riskier) |
+| `MAX_ITERATIONS=N` | 50 | Safety limit on iterations |
+| `CONTEXT_FILES="..."` | - | Additional files to include |
+
+### Handling Loop Failures
+
+- **Task fails**: Remains `in_progress`, fix issue, re-run loop
+- **Validation fails**: Task remains `in_progress`, fix tests/lint, re-run
+- **Design problem**: Stop loop (Ctrl+C), return to design phase
+- **All complete**: Loop exits with success, proceed to validate phase
 
 ## Agent Delegation
 

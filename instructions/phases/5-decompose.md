@@ -116,21 +116,37 @@ Main feature work.
 
 ## Task Sizing Guidelines
 
+**CRITICAL: Tasks are executed via the autonomous loop, which spawns a FRESH context for each task.** Size tasks so they can be completed in a single fresh context window.
+
+### Context-Aware Sizing (Loop Mode)
+
+Each task runs in isolation with fresh context. Tasks should be sized to:
+- **Complete in a SINGLE fresh context window** (~176K usable tokens)
+- **Touch no more than 5-10 files** (keeps context focused)
+- **Make one logical, testable change** (single responsibility)
+- **Be describable in ~500-1000 tokens** (fits in loop prompt)
+
 ### Too Small
 - "Add import statement"
 - "Fix typo in variable name"
+- Trivial changes that don't warrant fresh context
 → Combine with related work
 
-### Right Size
+### Right Size (Loop-Friendly)
 - "Implement user validation middleware"
 - "Add API endpoint for fetching orders"
 - "Create database migration for new table"
+- **Can be explained to a fresh context in <1000 tokens**
+- **Touches a focused set of related files**
+- **Has a clear test that verifies completion**
 → Can be completed in 1-4 hours
 
 ### Too Large
 - "Implement authentication system"
 - "Build the frontend"
-→ Break into smaller tasks
+- Tasks requiring understanding too much code
+- Tasks that would benefit from "continuing where you left off"
+→ Break into smaller tasks before starting loop
 
 ## Completion Criteria
 
@@ -147,11 +163,13 @@ Main feature work.
 ## Common Pitfalls
 
 1. **Missing Tasks** - Forgetting infrastructure, tests, or config
-2. **Wrong Granularity** - Tasks too large or too small
+2. **Wrong Granularity** - Tasks too large for a single loop iteration
 3. **Hidden Dependencies** - Not recognizing task ordering needs
 4. **Vague Criteria** - "Done" isn't clearly defined
 5. **Tests After Implementation** - Writing tests last instead of first (VIOLATES TDD)
 6. **No Test References** - Tasks without clear connection to tests
+7. **Context-Heavy Tasks** - Tasks that require understanding too much code to complete in fresh context
+8. **Multi-Concern Tasks** - Tasks that do "A and B and C" instead of focused single changes
 
 ## Next Phase
 Proceed to Phase 6: Implement when criteria are met.
