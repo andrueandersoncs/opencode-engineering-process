@@ -103,6 +103,73 @@ docs/stories/<story-slug>/
 | `/phase [name]` | View current phase or jump to another |
 | `/checkpoint` | Validate current phase completion |
 
+## Autonomous Loop Mode
+
+For maximum productivity during the **implement** phase, use the autonomous loop orchestrator. This implements the "Ralph Wiggum" pattern: fresh context per task, tight scope, validation as backpressure.
+
+### Why Autonomous Looping?
+
+The key insight: only ~176K of a 200K token context is truly usable (the "smart zone"). Long sessions accumulate stale context, reducing quality. The loop:
+
+1. **Fresh context per task** - Kills accumulated noise
+2. **Single task focus** - Maximum "smart zone" utilization
+3. **Validation gate** - Tests/lint constrain non-determinism
+4. **Persistent state** - `tasks.md` survives across loops
+
+### Running the Loop
+
+```bash
+# After completing phases 1-5 (understand through decompose)
+/phase implement
+
+# Start autonomous implementation
+./scripts/loop.sh
+
+# Or specify a story
+./scripts/loop.sh add-authentication
+```
+
+### Loop Options
+
+```bash
+# Preview without executing
+DRY_RUN=1 ./scripts/loop.sh
+
+# Skip validation between tasks (faster, riskier)
+SKIP_VALIDATION=1 ./scripts/loop.sh
+
+# Limit iterations
+MAX_ITERATIONS=10 ./scripts/loop.sh
+
+# Add extra context files
+CONTEXT_FILES="src/types.ts src/config.ts" ./scripts/loop.sh
+```
+
+### How It Works
+
+```
+┌─────────────────────────────────────────────────────────┐
+│                    LOOP ITERATION                        │
+│                                                          │
+│   1. Read tasks.md, find next incomplete task           │
+│   2. Mark task as in_progress                           │
+│   3. Spawn fresh OpenCode with task + context           │
+│   4. Execute single task                                │
+│   5. Run validation (tests, lint, typecheck)            │
+│   6. If pass: mark complete, loop                       │
+│   7. If fail: leave in_progress, fix and retry          │
+└─────────────────────────────────────────────────────────┘
+```
+
+### Supporting Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `loop.sh` | Main orchestrator |
+| `next-task.sh` | Extract next task respecting dependencies |
+| `mark-complete.sh` | Update task status in tasks.md |
+| `run-validation.sh` | Auto-detect and run tests/lint/typecheck |
+
 ## Project Structure
 
 ```
@@ -138,6 +205,10 @@ opencode-engineering-process/
 │       ├── task-breakdown.md
 │       └── pr-description.md
 └── scripts/
+    ├── loop.sh                # Autonomous loop orchestrator
+    ├── next-task.sh           # Extract next incomplete task
+    ├── mark-complete.sh       # Update task status
+    ├── run-validation.sh      # Test/lint/typecheck runner
     └── phase-gate.sh          # CLI validation script
 ```
 
